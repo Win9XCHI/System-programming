@@ -22,9 +22,13 @@ void PushMsg(long type) {
 	One.type = type;
 	
 	try {
-		int IDmsg = msgget(1, IPC_CREAT | 0666); 
+		int IDmsg = msgget(1, 0);
 		if (IDmsg == -1) {
-			throw "Error create msgget";
+			IDmsg = msgget(1, IPC_CREAT | 0666); 
+			
+			if (IDmsg == -1) {
+				throw "Error create msgget";
+			}
 		}
 		
 		switch (type) {
