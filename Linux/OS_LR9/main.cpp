@@ -47,7 +47,7 @@ void *Print(void *arg) { //Thread for outputting information about file
     return 0;
 }
 
-string NextDir(const char *dir, const char *newDir) { //Convert to string //Create path for next direction
+string NextDir(const char *dir, const char *newDir) { //Create path for next direction
 	string str;
 	
 	str.insert(0, dir);
@@ -60,64 +60,56 @@ string NextDir(const char *dir, const char *newDir) { //Convert to string //Crea
 	return str;
 }
 
-bool Search(const char *dirname, const char *filename, const unsigned int size2, const unsigned int size1 = 0) {
-
-	if (dirname[strlen(dirname) - 1] == '.' || strstr(dirname,"..") != 0) { //Ignore '.' and '..' files
-		return false;
-	}
+void Search(const char *dirname, const char *filename, const unsigned int size2, const unsigned int size1 = 0) {
 	
 	DIR *dirID = opendir(dirname);
 	dirent *real = NULL;
 	struct stat stBuff;
 	int result = 0;
 	pthread_t thread;
-	bool flag = false;
 	string str;
 	string FileNameAndDir = NextDir(dirname, filename);
 	
 	if (dirID != NULL) {			
-			if (stat(FileNameAndDir.c_str(), &stBuff) == 0) {//all pathname
-				
-				if (static_cast<unsigned int>(stBuff.st_size) > size1 && static_cast<unsigned int>(stBuff.st_size) < size2 ) {
+		if (stat(FileNameAndDir.c_str(), &stBuff) == 0) {//all pathname
+			
+			if (static_cast<unsigned int>(stBuff.st_size) > size1 && static_cast<unsigned int>(stBuff.st_size) < size2 ) {
 					
-					result = pthread_create(&thread, NULL, Print, &stBuff);
-					if (result != 0) {
-						cout << endl << "File fount, but an error has occurred";
-					}	
-					pthread_join(thread, NULL);	
-					flag = true;	
-				}
-			} 
+				result = pthread_create(&thread, NULL, Print, &stBuff);
+				if (result != 0) {
+					cout << endl << "File fount, but an error has occurred";
+				}	
+				pthread_join(thread, NULL);
+			}
+		} 
 			
 		while ((real = readdir(dirID)) != NULL) {
-			cout << "Give to dir: ";
-			printf("%lu - %s [%d] %d\n", real->d_ino, real->d_name, real->d_type, real->d_reclen);
-			str = NextDir(dirname, real->d_name);
-			flag = Search(str.c_str(), filename, size2, size1);
+						
+			if (strcmp(real->d_name, ".") != 0 && strcmp(real->d_name, "..") != 0) { //Ignore '.' and '..' files
+				
+				str = NextDir(dirname, real->d_name);
+				flag = Search(str.c_str(), filename, size2, size1);
+			}
 		}
 		closedir(dirID);
 	}
-	
-	return flag;
 }
 
 
+//argv: 1 - mount point, 2 - file name, 3 - min size or max size if argv[4] not fount, 4 - min size
+//Build with -lpthread
 int main(int argc, char *argv[]) {
 	
-	try {
+	try { //Rudiment, but will can need
 		
-		if (argc < 2 || argc > 4) {
+		if (argc < 2 || argc > 5) {
 			throw "Error: invalid set params";
 		}
-		if (argc == 4) {
-			if (!Search("/home/yehor/Projects", argv[1], atoi(argv[3]), atoi(argv[2]))) {
-				throw "File not found";
-			}	
+		if (argc == 5) {
+			Search(argv[1], argv[2], atoi(argv[4]), atoi(argv[3]));
 		}	
-		if (argc == 3) {
-			if (!Search("/home/yehor/Projects", argv[1], atoi(argv[2]))) {
-				throw "File not found";
-			}
+		if (argc == 4) {
+			Search(argv[1], argv[2], atoi(argv[3]));
 		}
 	
 	} catch (const char *str) {
