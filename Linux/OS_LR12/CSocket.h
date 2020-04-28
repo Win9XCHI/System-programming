@@ -5,12 +5,13 @@
 #include <cstring>
 #include <cstdlib>
 #include <iostream> //убрать позже
+#include <stdio.h>
 using namespace std;
 
 class CSocket {
 	private:
 			
-		struct sockaddr_in *addr;
+		struct sockaddr_in addr;
 		int domain;
 		int type;
 		int protocol;
@@ -22,16 +23,18 @@ class CSocket {
 		int SelectDomain(char *str);
 		int SelectType(char *str, char *strDom);
 		
-		void ClearAddr();
 		void InitAddr();
 		
 	public:
 		CSocket();
 		CSocket(char *strDomain, char *strType, /*char *strProtocol,*/ char *strPort);
+		CSocket(CSocket &Object);
 		~CSocket();
 		
-		int CreateConnection(char *strDomain, char *strType, char *strPort/*, char *strProtocol*/);
-		int CreateConnection();
+		void Create(char *strDomain, char *strType, char *strPort/*, char *strProtocol*/);
+		void Create();
+		void Connect(char *strDomain, char *strType, char *strPort/*, char *strProtocol*/);
+		void Connect();
 		
 		int GetListener();
 		
@@ -40,4 +43,6 @@ class CSocket {
 		void NewConnectSock(/*int sockfd, struct sockaddr *addr, socklen_t *addrlen*/);
 		
 		void Close();
+		
+		CSocket operator=(const CSocket &Object);
 };

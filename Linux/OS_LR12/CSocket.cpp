@@ -1,7 +1,6 @@
 #include "CSocket.h"
 
 CSocket::CSocket() : domain(AF_INET), type(SOCK_STREAM), protocol(0), port(3425), listener(0), sock(0) {
-	addr = NULL;
 	InitAddr();
 }
 		
@@ -13,61 +12,66 @@ CSocket::CSocket(char *strDomain, char *strType, char *strPort) : listener(0), s
 	InitAddr();
 }
 
-CSocket::~CSocket() {
-	ClearAddr();
+CSocket::CSocket(CSocket &Object) {
+	domain = Object.domain;
+	type = Object.type;
+	protocol = Object.protocol;
+	port = Object.port;
+	listener = Object.listener;
+	sock = Object.sock;
+	InitAddr();
 }
 
-void CSocket::ClearAddr() {
-	if (addr != NULL) {
-		delete addr;
-		addr = NULL;	
-	}
+CSocket::~CSocket() {
 }
 
 void CSocket::InitAddr() {
-	ClearAddr();
-	addr = new struct sockaddr_in();
-	addr->sin_family = domain;	//type
-	addr->sin_port = htons(port); //port
-	addr->sin_addr.s_addr = htonl(INADDR_ANY); //address
+	addr.sin_family = domain;	//type
+	addr.sin_port = htons(port); //port
+	addr.sin_addr.s_addr = htonl(INADDR_ANY); //address
 }
 
-int CSocket::CreateConnection(char *strDomain, char *strType, char *strPort) {
+void CSocket::Create(char *strDomain, char *strType, char *strPort) {
 	domain = SelectDomain(strDomain);
 	type = SelectType(strType, strDomain);
 	protocol = 0;
 	port = atoi(strPort);
 	InitAddr();
 	
-	int listener = socket(domain, type, protocol); //create socket for internet and connection
-	
-	if(listener < 0) {
-        throw "Create socket error";
-    }
-
-    if(bind(listener, (struct sockaddr *)addr, sizeof(*addr)) < 0) { //connect socket with address
-        throw "Bind error";
-    }
-
-    listen(listener, 1); //new queue query
-    
-    return listener;
+	Create();
 }
 
-int CSocket::CreateConnection() {
-	int listener = socket(domain, type, 0); //create socket for internet and connection
+void CSocket::Create() {
+	listener = socket(domain, type, 0); //create socket for internet and connection
 	
 	if(listener < 0) {
         throw "Create socket error";
     }
 
-    if(bind(listener, (struct sockaddr *)addr, sizeof(*addr)) < 0) { //connect socket with address
+    if(bind(listener, (struct sockaddr *)&addr, sizeof(addr)) < 0) { //connect socket with address
         throw "Bind error";
     }
 
-    listen(listener, 1); //new queue query
-    
-    return listener;
+    if (listen(listener, 1) < 0) { //new queue query
+		throw "Listen error";
+	}
+}
+
+void CSocket::Connect(char *strDomain, char *strType, char *strPort) {
+	domain = SelectDomain(strDomain);
+	type = SelectType(strType, strDomain);
+	protocol = 0;
+	port = atoi(strPort);
+	InitAddr();
+	
+	Connect();
+}
+
+void CSocket::Connect() {
+	sock = socket(AF_INET, SOCK_STREAM, 0);
+	if(connect(sock, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+        throw "Error connection";
+    }
 }
 
 int CSocket::SelectDomain(char *str) {
@@ -106,10 +110,10 @@ int CSocket::SelectType(char *str, char *strDom) {
 
 void CSocket::NewConnectSock() {
 	sock = accept(listener, NULL, NULL);
-	//cout << endl << sock << endl << listener << endl;
-	/*if(sock < 0) {
+	
+	if(sock < 0) {
 		throw "Accept error";
-	}*/
+	}
 }
 
 int CSocket::GetInfo(void *buf, size_t len, int flags) {
@@ -122,4 +126,16 @@ void CSocket::Close() {
 
 void CSocket::SendInfo(void *buf, size_t len, int flags) {
 	send(sock, buf, len, 0);
+}
+
+CSocket CSocket::operator=(const CSocket &Object) {
+	domain = Object.domain;
+	type = Object.type;
+	protocol = Object.protocol;
+	port = Object.port;
+		
+	listener = Object.listener;
+	sock = Object.sock;
+	InitAddr();
+	return *this;
 }
