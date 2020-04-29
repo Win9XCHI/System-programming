@@ -1,10 +1,13 @@
 #include "CSocket.h"
+#define NAME_CLIENT 30
+#define DATA 200
+#define COMMAND 30
 
 struct message {
-	char nameClient[30];
+	char nameClient[NAME_CLIENT];
 	int TypeQuery;
-	char command[30];
-	char Data[400];
+	char command[COMMAND];
+	char Data[DATA];
 	unsigned int ControlSum;
 	
 	char NameStruct[10];	//?
@@ -24,8 +27,8 @@ struct message {
 };
 
 struct answer {
-	char nameClient[22];
-	char Data[400];
+	char nameClient[NAME_CLIENT];
+	char Data[DATA];
 	unsigned int errorCode;
 	unsigned int ControlSum;
 };

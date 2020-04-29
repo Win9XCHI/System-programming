@@ -1,107 +1,13 @@
-#include <iostream>
-#include <cstring>
 #include "DataStructures.h"
 #include <pthread.h>
-#include <fstream>
-#include <vector>
-#include <ctime>
+#include "Handlers.h"
 
 using namespace std;
 //g++ -Wall -o "%e" "%f"
 
 pthread_mutex_t mutexMain = PTHREAD_MUTEX_INITIALIZER; 
 pthread_mutex_t mutexOutput = PTHREAD_MUTEX_INITIALIZER; 
-pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
-
-template <class Container>
-void split(const std::string& str, Container& cont, char delim = ' ', char delim2 = ' ') {
-    size_t current, previous = 0;
-    previous = str.find(delim);
-    current = str.find(delim2);
-    while (previous != string::npos && previous < str.find('\n')) {
-        cont.push_back(str.substr(previous, current - previous));
-        previous = str.find(delim, current);
-        current = str.find(delim2, previous);            
-    }
-    if (str.find('\n') != string::npos) {
-        cont.push_back(str.substr(current, str.find('\n')));
-    }
-}
-
-string splitTown(const string& str, string town) {
-    size_t current, next = 0;
-    string newStr;
-    current = str.find(town + ':');
-
-    if (current == string::npos) {
-        return "\0";
-    }
-
-    next = str.find('\n', current);
-    if (next == string::npos) {
-        next = str.length();
-    }
-
-    newStr = str.substr(current, next);
-
-    return newStr;
-}
-
-string settime(struct tm *u) {
-	  char s[11];
-	  for (int i = 0; i<11; i++) s[i] = 0;
-	  strftime(s, 11, "%d.%m.%Y", u);
-	  string str(s);
-	  return str;
-}
-
-//get [name city] [date] = 'current' [month] = 'current' 
-string GetInformation(char *str) {
-	string work(str);
-	vector<string> cont;
-	split(work, cont);
-	string stringTown;
-	string buff;
-	
-	cout << endl << work;
-	split(work, cont);
-
-	if (cont.size() < 2) {
-		throw '\0';
-	}
-		
-	if (cont.size() == 3) {
-		work = cont[2] + ".txt";
-	} else {
-		const time_t timer = time(NULL);
-		struct tm *u;
-		u = localtime(&timer);
-		work = settime(u);
-	}
-	cout << endl << work;
-		
-	ifstream file(work.c_str());
-	//while(file.getline(&buff, 2000)) {
-	while(getline(file, buff, ",")) {
-		stringTown = splitTown(buff, cont[1]);
-	}
-	file.close();
-	
-	if (stringTown.size() == 1) {
-		throw '\0';
-	}
-		
-	if (cont.size() == 4) {
-		work = stringTown.substr(stringTown.find(cont[3]), stringTown.find(",", stringTown.find(cont[3])) - stringTown.find(cont[3]));
-	}
-		
-	cout << endl << work;
-	if (work.size() == 0) {
-		throw '\0';
-	}
-	
-	return work;
-}
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER; 
 
 bool CheckClient(const char *NameClient) {
 	char Author[10];
@@ -116,11 +22,10 @@ bool CheckClient(const char *NameClient) {
 void LogFile(message *Object) {
 	ofstream file("Log.txt", ios_base::app);
 	file << "Author: " << Object->nameClient << endl;
-	if (strcmp(Object->command, "") == 0) {
-		file << "Command: Init";
-	} else {
-		file << "Command: " << Object->command;
-	}
+	file << "Command: " << Object->command << endl;
+    file << "Time: " << SetTime("%d.%m.%Y %X") << endl;
+	
+	
 	file.close();
 }
 
@@ -131,6 +36,8 @@ void *ProcessData(void *arg) {
 	pthread_cond_signal(&cond);
 	
 	answer Ans;
+	vector<string> cont;
+	string work;
 	Ans.errorCode = 0;
 	Ans.ControlSum = 334;
 	strcpy(Ans.nameClient, "Thank you ");
@@ -141,22 +48,44 @@ void *ProcessData(void *arg) {
 		
 	} else {
 		try {
-			strcpy(Ans.Data, GetInformation(Mes.command).c_str());
+			split(Mes.command, cont); 
+	 
+			if (cont.size() < 2) {
+				throw 1;
+			}
+	 
+			if (cont[0] == "get" && Mes.TypeQuery == 2) {
+				GetInformation(cont, work);		
+				strcpy(Ans.Data, work.c_str());
+			}
+			
+			if (cont[0] == "root" && Mes.TypeQuery == 3) {
+				cout << endl << "Query on root right ";
+				if (CheckPassword(cont[1])) {
+					cout << "YES right";
+				} else {
+					cout << "NOT right";
+					Ans.errorCode = 4;
+				}
+			}
+			
 		} catch (char c) {
-			cout << endl << "Error";
+			cout << endl << "Error process query";
 			Ans.errorCode = 2;
+		} catch (int) {
+			cout << endl << "Error query";
+			Ans.errorCode = 3;
 		}
-		//if (strlen(Ans.Data) == 0) {}
 	}
+	
 	strcat(Ans.nameClient, Mes.nameClient);
 				
-	sock.SendInfo(&Ans, sizeof(Ans));
+	sock.SendInfo(&Ans, sizeof(answer));
 	
 	pthread_mutex_lock(&mutexOutput);
-	cout << endl << "Urgent news from " << Mes.nameClient << ": " << Mes.command << endl;
-	pthread_mutex_unlock(&mutexOutput);
-	
+	cout << endl << "Command from " << Mes.nameClient << ": " << Mes.command << endl;
 	LogFile(&Mes);
+	pthread_mutex_unlock(&mutexOutput);	
 	
 	return (void *)Object;
 }
@@ -167,6 +96,7 @@ int main(int argc, char *argv[]) {
 	ForPthread Arg;
     message Object;
     pthread_t id = 0; 
+    char exit[10];
     CSocket sock;
     Arg.sock = &sock;
     pthread_mutex_init(&mutexOutput, NULL);
@@ -185,21 +115,33 @@ int main(int argc, char *argv[]) {
 		cout << endl << "Please, check parameters and restart";
 		return 1;
 	}
+	
+	cout << endl << "Server status: start" << endl;
+	
     try {
 		
-		while(1) {
+		while(true) {
 			sock.NewConnectSock();
 
-			while(1) {
+			while(true) {
 				
 				int bytes_read = sock.GetInfo(&Object, sizeof(message));
 				
-				if(bytes_read <= 0 || Object.ControlSum != 7534) {
+				if(bytes_read <= 0 || (Object.ControlSum != 7534 && Object.ControlSum != 8349)) {
 					break;
 				}
 				
 				if (strcmp(Object.command, "exit") == 0) {
-					return 0;
+					LogFile(&Object);
+					if (Object.ControlSum == 8349 && Object.TypeQuery == 4) {
+						strcpy(exit, "Yes");
+						sock.SendInfo(&exit, sizeof(exit));
+						return 0;
+					} else {
+						strcpy(exit, "No");
+						sock.SendInfo(&exit, sizeof(exit));
+						break;
+					}
 				}
 				
 				Arg.Object = &Object;

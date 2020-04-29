@@ -1,34 +1,19 @@
-Author: Vasia
-Msg: Author: Yehor2
-Msg: InitAuthor: Yehor2
-Msg: HiAuthor: Yehor
-Author: Yehor
-Msg: InitMsg: InitAuthor: hfj
-Msg: InitAuthor: hfj
-Msg: hjyAuthor: hfj
-Msg: jhyAuthor: Yehor
-Msg: InitAuthor: Yehor
-Msg: hfjAuthor: Yehor
-Msg: jhyuAuthor: Yehor
-Msg: InitAuthor: Yehor
-Msg: StartAuthor: Yehor
-Msg: jAuthor: Yehor
-Msg: oAuthor: Yehor
-Msg: hAuthor: Yehor
-Msg: InitAuthor: Yehor
-Msg: ytrAuthor: hty
-Msg: InitAuthor: hty
-Msg: yjhgAuthor: hty
-Msg: yhgdAuthor: hty
-Msg: uioAuthor: hty
-Msg: zxcAuthor: yehor-X550Hi
-Msg: HiAuthor: yehor-X550Hi
-Msg: HiAuthor: yehor-X550Hi
-Msg: HiAuthor: yehor-X550h
-Msg: hAuthor: yehor-X550Hi
-Msg: HiAuthor: yehor-X550Hi
-Msg: HiAuthor: yehor-X55
-Msg: HiAuthor: yehor-X550LA
-Msg: HiAuthor: yehor-X550LA
-Msg: hgtAuthor: yehor-X550LA
-Command: invalid
+
+Author: yehor-X550LA
+Command: get London 28.04.2020 Mar
+Time: 29.04.2020 22:46:34
+Author: yehor-X550LA
+Command: get London 28.04.2020
+Time: 29.04.2020 22:46:38
+Author: yehor-X550LA
+Command: get London
+Time: 29.04.2020 22:46:42
+Author: yehor-X550LA
+Command: root 34
+Time: 29.04.2020 22:46:57
+Author: yehor-X550LA
+Command: root 1234
+Time: 29.04.2020 22:47:00
+Author: yehor-X550LA
+Command: exit
+Time: 29.04.2020 22:47:04
